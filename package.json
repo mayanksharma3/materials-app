@@ -10,7 +10,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/mayanksharma3/materials-systray.git"
+    "url": "https://github.com/mayanksharma3/materials-app.git"
   },
   "scripts": {
     "build": "tsc",
