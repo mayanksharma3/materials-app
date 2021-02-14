@@ -19,7 +19,7 @@
   "build": {
     "extends": null,
     "files": [
-      "./dist/**/*",
+      "./dist/**/*"
     ]
   },
   "author": "Mayank Sharma <mayank.sharma.uk@gmail.com>",
