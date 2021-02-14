@@ -16,6 +16,11 @@
     "build": "tsc",
     "start": "tsc && electron dist/electron.js"
   },
+  "build": {
+    "extraMetadata": {
+      "main": "dist/electron.js"
+    }
+  },
   "author": "Mayank Sharma <mayank.sharma.uk@gmail.com>",
   "license": "MIT",
   "dependencies": {
