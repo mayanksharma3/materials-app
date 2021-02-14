@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Materials System Tray</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" href="style.css"/>
+</head>
+<body style="overflow: hidden">
+<div style="position: fixed; top: 20px; right: 20px;">
+    <button type="button" onclick="closeWindow()" class="close" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+<div>
+    <h1>Materials</h1>
+</div>
+<div id="loginCard" class="shadow-sm p-3 mb-5 bg-white rounded card stepCard">
+    <div class="card-body">
+        <form>
+            <div class="form-group">
+                <label for="shortcode">Imperial Shortcode</label>
+                <input type="text" class="form-control" id="shortcode" aria-describedby="emailHelp"
+                       placeholder="Enter email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" id="password" placeholder="Password">
+            </div>
+
+            <button type="button" id="submitButton" class="btn btn-block btn-success login-btn">Submit</button>
+            <div id="login-failed" class="alert alert-danger" role="alert">
+                Username or password wrong, please try again
+            </div>
+        </form>
+    </div>
+</div>
+<div id="coursesCard" class="bg-white rounded card stepCard" style="border: 0">
+    <div class="card-body">
+        <h4 class="chooseCoursesTitle">Choose courses:</h4>
+        <div class="row">
+            <div class="col-6" id="courseList1">
+
+            </div>
+            <div class="col-6" id="courseList2">
+
+            </div>
+        </div>
+        <div class="row">
+            <button style="margin-top: 15px" onclick="saveCourses()" class="btn btn-block btn-success login-btn">Save
+            </button>
+        </div>
+    </div>
+</div>
+<div id="endCard" class="bg-white rounded card stepCard" style="border: 0">
+    <div class="card-body">
+        <h4 class="chooseCoursesTitle">All Ready to Go!</h4>
+        <div class="row">
+            <img src="systemTrayIcon.png" style="width: 60%; margin: 0 auto"/>
+        </div>
+        <div class="row" style="margin: 0 auto">
+            <p style="text-align: center; margin: 0 auto">Just click the "M" button to fetch materials or open the
+                folders</p>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button style="margin-top: 15px; border: 0; float: left" onclick="switchPage('courses')" class="btn btn-danger login-btn">
+                    Pick Courses
+                </button>
+            </div>
+            <div class="col">
+                <button style="margin-top: 15px; float:right" onclick="clearConfig()" class="btn btn-danger">Clear
+                    Config
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>if (typeof module === 'object') {
+    window.module = module;
+    module = undefined;
+}</script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>if (window.module) module = window.module;</script>
+
+<script>
+    const {ipcRenderer} = require('electron')
+    $(document).ready(function () {
+        $('#login-failed').hide();
+
+        ipcRenderer.send("auto-login");
+
+        $('#submitButton').click(() => {
+            const username = $('#shortcode').val();
+            const password = $('#password').val();
+            ipcRenderer.send("login", {username: username, password: password});
+        });
+    });
+
+    ipcRenderer.on("login-response", (event, response) => {
+        if (!response) {
+            $('#login-failed').fadeIn();
+        }
+
+        setTimeout(() => {
+            $('#login-failed').fadeOut();
+        }, 3000);
+    });
+
+    function switchPage(args) {
+        $('#loginCard').fadeOut();
+        $('#coursesCard').fadeOut();
+        $('#endCard').fadeOut();
+        switch (args) {
+            case "courses":
+                $('#coursesCard').fadeIn();
+                ipcRenderer.send("fetchCourses")
+                break;
+            case "login":
+                $('#loginCard').fadeIn();
+                break;
+            case "end":
+                $('#endCard').fadeIn();
+                break;
+        }
+    }
+
+    ipcRenderer.on("page", ((event, args) => {
+        switchPage(args);
+    }));
+
+
+    let coursesList = [];
+    ipcRenderer.on("courses", ((event, courses) => {
+        $('#courseList1').html('')
+        $('#courseList2').html('')
+        coursesList = courses;
+        for (let i = 0; i < courses.length; i++) {
+            $('#courseList' + ((i % 2) + 1)).append(`
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" ${courses[i].selected && "checked"} id="course${i}">
+                  <label class="form-check-label" for="course${i}">
+                    ${courses[i].title}
+                  </label>
+                </div>
+            `)
+        }
+    }))
+
+    function saveCourses() {
+        ipcRenderer.send("coursesSave", coursesList.filter((course, index) => $('#course' + index).is(':checked')))
+    }
+
+    function clearConfig() {
+        ipcRenderer.send("clearConfig")
+    }
+
+    function closeWindow() {
+        ipcRenderer.send("closeWindow")
+    }
+
+</script>
+
+</body>
+</html>

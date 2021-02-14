@@ -1,0 +1,26 @@
+h1 {
+    color: #009688;
+    text-align: center;
+    font-size: 50px;
+    font-weight: 200;
+    margin-top: 20px;
+}
+
+.chooseCoursesTitle {
+    font-weight: 300;
+    text-align: center;
+}
+
+.stepCard {
+    width: 90%;
+    margin: 0 auto;
+    display: none;
+}
+
+.login-btn {
+    background-color: #009688;
+}
+
+#submitButton {
+    margin-bottom: 10px;
+}
