@@ -17,7 +17,10 @@
     "start": "tsc && electron dist/electron.js"
   },
   "build": {
-    "extends": null
+    "extends": null,
+    "files": [
+      "./dist/**/*",
+    ]
   },
   "author": "Mayank Sharma <mayank.sharma.uk@gmail.com>",
   "license": "MIT",
