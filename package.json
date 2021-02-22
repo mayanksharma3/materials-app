@@ -1,6 +1,6 @@
 {
   "name": "materials-systray",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Systray Application for Imperial Materials",
   "main": "./dist/electron.js",
   "keywords": [
