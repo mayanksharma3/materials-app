@@ -157,7 +157,7 @@ app.on("ready", async () => {
         win.show()
     }
 
-    tray = new Tray(path.join(__dirname, '../', "media", process.platform === "win32" ? "materials_win.png" : 'materials@2x.png'))
+    tray = new Tray(path.join(__dirname, '../', "media", process.platform === "win32" ? "icon.ico" : 'materials@2x.png'))
     let courses = conf.getCourses();
     updateTray(courses);
 
