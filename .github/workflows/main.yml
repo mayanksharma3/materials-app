@@ -25,6 +25,7 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         with:
           use_lxd: true
+          snapcraft_token: ${{ secrets.snapcraft_token }}
       - name: Build snap
         run: sg lxd -c 'snapcraft --use-lxd'
       - name: Install Snapcraft
