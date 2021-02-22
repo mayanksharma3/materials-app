@@ -26,15 +26,6 @@ jobs:
         with:
           use_lxd: true
           snapcraft_token: ${{ secrets.snapcraft_token }}
-      - name: Build snap
-        if: startsWith(matrix.os, 'ubuntu')
-        run: sg lxd -c 'snapcraft --use-lxd'
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v1
-        if: startsWith(matrix.os, 'ubuntu')
-        with:
-          snapcraft_token: ${{ secrets.snapcraft_token }}
-          skip_install: true # optional, if already installed in an earlier step
       - name: Build/release Electron app
         uses: samuelmeuli/action-electron-builder@v1
         with:
