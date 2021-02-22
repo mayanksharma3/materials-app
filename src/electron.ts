@@ -164,6 +164,11 @@ if (!gotTheLock) {
         }
 
         tray = new Tray(path.join(__dirname, '../', "media", process.platform === "win32" ? "icon.ico" : 'materials@2x.png'))
+        if(process.platform == "win32") {
+            tray.on('clicked', function() {
+                tray.popUpContextMenu();
+            })
+        }
         let courses = conf.getCourses();
         updateTray(courses);
 
