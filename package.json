@@ -23,7 +23,10 @@
       "./dist/**/*",
       "./media/**/*",
       "./site/**/*"
-    ]
+    ],
+    "snap":{
+       "buildPackages": ["libappindicator1", "libsecret-1-dev", "gnome-keyring"]
+    }
   },
   "author": "Mayank Sharma <mayank.sharma.uk@gmail.com>",
   "license": "MIT",
