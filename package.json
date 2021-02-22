@@ -21,7 +21,8 @@
     "productName": "Materials",
     "files": [
       "./dist/**/*",
-      "./media/**/*"
+      "./media/**/*",
+      "./site/**/*"
     ]
   },
   "author": "Mayank Sharma <mayank.sharma.uk@gmail.com>",
