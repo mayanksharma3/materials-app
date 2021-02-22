@@ -51,7 +51,7 @@ function toggleWindow() {
 }
 
 
-function updateTray(courses?: Course[]) {
+function updateTray(courses: Course[]) {
     trayMenuTemplate = [
         {
             label: 'Open Folder',
@@ -74,60 +74,58 @@ function updateTray(courses?: Course[]) {
             }
         }
     ]
-    if(courses) {
-        if (courses.length === 0) {
+    if (courses.length === 0) {
+        trayMenuTemplate[0].submenu.push({
+            label: "No courses",
+            enabled: false
+        })
+        trayMenuTemplate[1].submenu.push({
+            label: "No courses",
+            enabled: false
+        })
+    } else {
+        courses.forEach(course => {
             trayMenuTemplate[0].submenu.push({
-                label: "No courses",
-                enabled: false
+                label: course.title,
+                click: async function () {
+                    await open(path.join(folderPath, course.title))
+                }
             })
             trayMenuTemplate[1].submenu.push({
-                label: "No courses",
-                enabled: false
-            })
-        } else {
-            courses.forEach(course => {
-                trayMenuTemplate[0].submenu.push({
-                    label: course.title,
-                    click: async function () {
-                        await open(path.join(folderPath, course.title))
-                    }
-                })
-                trayMenuTemplate[1].submenu.push({
-                    label: course.title,
-                    click: async function () {
-                        showPendingNotification(course.title)
-                        try {
-                            let existingCredentials = await keystore.getCredentials()
+                label: course.title,
+                click: async function () {
+                    showPendingNotification(course.title)
+                    try {
+                        let existingCredentials = await keystore.getCredentials()
 
-                            if (existingCredentials) {
-                                const newToken = await testAuth(existingCredentials)
-                                if (!newToken) {
-                                    win.show()
-                                    win.webContents.send("page", "login")
-                                } else {
-                                    tokenAndCredentials = {credentials: existingCredentials, token: newToken}
-                                    const materialsLegacy = new MaterialsLegacy();
-                                    await materialsLegacy.authLegacy(tokenAndCredentials.credentials)
-                                    const numberOfDownloads = await downloadCourse(course, new MaterialsApi(tokenAndCredentials.token), materialsLegacy)
-                                    if (numberOfDownloads == -1) {
-                                        showErrorNotification()
-                                    } else {
-                                        showCompletedNotification(numberOfDownloads, course.title, path.join(folderPath, course.title))
-                                    }
-                                }
-                            } else {
+                        if (existingCredentials) {
+                            const newToken = await testAuth(existingCredentials)
+                            if (!newToken) {
                                 win.show()
                                 win.webContents.send("page", "login")
+                            } else {
+                                tokenAndCredentials = {credentials: existingCredentials, token: newToken}
+                                const materialsLegacy = new MaterialsLegacy();
+                                await materialsLegacy.authLegacy(tokenAndCredentials.credentials)
+                                const numberOfDownloads = await downloadCourse(course, new MaterialsApi(tokenAndCredentials.token), materialsLegacy)
+                                if (numberOfDownloads == -1) {
+                                    showErrorNotification()
+                                } else {
+                                    showCompletedNotification(numberOfDownloads, course.title, path.join(folderPath, course.title))
+                                }
                             }
-
-                        } catch (e) {
-                            showErrorNotification()
+                        } else {
+                            win.show()
+                            win.webContents.send("page", "login")
                         }
 
+                    } catch (e) {
+                        showErrorNotification()
                     }
-                })
+
+                }
             })
-        }
+        })
     }
 
     tray.setToolTip("Materials")
@@ -150,16 +148,16 @@ app.on("ready", async () => {
     });
 
     const credentials = await keystore.getCredentials()
-    if(!credentials) {
+    if (!credentials) {
         win.show()
     }
 
     const auth = await testAuth(credentials)
-    if(!auth) {
+    if (!auth) {
         win.show()
     }
 
-    tray = new Tray(path.join(__dirname, '../', "media", process.platform === "win32" ?  "materials_win.png" : 'materials@2x.png'))
+    tray = new Tray(path.join(__dirname, '../', "media", process.platform === "win32" ? "materials_win.png" : 'materials@2x.png'))
     let courses = conf.getCourses();
     updateTray(courses);
 
@@ -248,7 +246,6 @@ ipcMain.on("clearConfig", async (event, data) => {
 
 ipcMain.on("closeWindow", async (event, data) => {
     win.hide()
-    updateTray()
 });
 
 export async function downloadCourse(course: Course, materialsAPI: MaterialsApi, materialsLegacy: MaterialsLegacy) {
