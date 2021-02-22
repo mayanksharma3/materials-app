@@ -9,6 +9,14 @@ class ConfigStore {
         this.conf = new Configstore(id);
     }
 
+    getFolderPath(): string | undefined {
+        return this.conf.has("folderPath") ? this.conf.get("folderPath"): undefined
+    }
+
+    setFolderPath(folderPath: string) {
+        this.conf.set("folderPath", folderPath)
+    }
+
     clearConfig() {
         this.conf.clear()
     }

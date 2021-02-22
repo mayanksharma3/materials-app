@@ -36,7 +36,8 @@ function createWindow() {
 
 const keystore = new Keystore();
 const conf = new ConfigStore(id);
-const folderPath = path.join(require("os").homedir(), "Documents", "Materials")
+const folderPath = conf.getFolderPath() || path.join(require("os").homedir(), "Documents", "Materials")
+console.log(folderPath)
 let tokenAndCredentials;
 
 let tray = null
@@ -134,34 +135,40 @@ function updateTray(courses: Course[]) {
 }
 
 let win: BrowserWindow;
-app.on("ready", async () => {
-    win = createWindow();
-    win.hide();
-    if (process.platform === "darwin") {
-        app.dock.hide();
-    }
-    if (process.platform === "win32") {
-        win.setSkipTaskbar(true);
-    }
-    app.on("activate", function () {
-        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+    app.quit()
+} else {
+    app.on("ready", async () => {
+        win = createWindow();
+        win.hide();
+        if (process.platform === "darwin") {
+            app.dock.hide();
+        }
+        if (process.platform === "win32") {
+            win.setSkipTaskbar(true);
+        }
+        app.on("activate", function () {
+            if (BrowserWindow.getAllWindows().length === 0) createWindow();
+        });
+
+        const credentials = await keystore.getCredentials()
+        if (!credentials) {
+            win.show()
+        }
+
+        const auth = await testAuth(credentials)
+        if (!auth) {
+            win.show()
+        }
+
+        tray = new Tray(path.join(__dirname, '../', "media", process.platform === "win32" ? "icon.ico" : 'materials@2x.png'))
+        let courses = conf.getCourses();
+        updateTray(courses);
+
     });
-
-    const credentials = await keystore.getCredentials()
-    if (!credentials) {
-        win.show()
-    }
-
-    const auth = await testAuth(credentials)
-    if (!auth) {
-        win.show()
-    }
-
-    tray = new Tray(path.join(__dirname, '../', "media", process.platform === "win32" ? "icon.ico" : 'materials@2x.png'))
-    let courses = conf.getCourses();
-    updateTray(courses);
-
-});
+}
 
 const job = schedule.scheduleJob('59 * * * *', async function () {
     try {
