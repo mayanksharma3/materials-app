@@ -139,7 +139,12 @@ let win: BrowserWindow;
 app.on("ready", async () => {
     win = createWindow();
     win.hide();
-    app.dock.hide();
+    if (process.platform === "darwin") {
+        app.dock.hide();
+    }
+    if (process.platform === "win32") {
+        win.setSkipTaskbar(true);
+    }
     app.on("activate", function () {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
