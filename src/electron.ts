@@ -164,7 +164,6 @@ if (!gotTheLock) {
         }
 
         tray = new Tray(path.join(__dirname, '../', "media", process.platform === "win32" ? "icon.ico" : 'materials@2x.png'))
-        tray.setIgnoreDoubleClickEvents(true)
         if(process.platform == "win32") {
             tray.on('clicked', function() {
                 tray.popUpContextMenu();
