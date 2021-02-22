@@ -20,7 +20,8 @@
     "extends": null,
     "productName": "Materials",
     "files": [
-      "./dist/**/*"
+      "./dist/**/*",
+      "./media/**/*"
     ]
   },
   "author": "Mayank Sharma <mayank.sharma.uk@gmail.com>",
