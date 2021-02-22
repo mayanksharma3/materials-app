@@ -18,6 +18,7 @@
   },
   "build": {
     "extends": null,
+    "productName": "Materials",
     "files": [
       "./dist/**/*"
     ]

@@ -1,7 +1,12 @@
 import {app, BrowserWindow, ipcMain, Menu, Tray} from "electron";
 import * as path from "path";
 import open from "open";
-import {showCompletedNotification, showErrorNotification, showPendingNotification} from "./notifier";
+import {
+    showAllNotification,
+    showCompletedNotification,
+    showErrorNotification,
+    showPendingNotification
+} from "./notifier";
 import fixPath from "fix-path";
 import ConfigStore from "./lib/configstore";
 import {id} from "./utils/config";
@@ -11,6 +16,8 @@ import {Course} from "./utils/course";
 import MaterialsLegacy from "./lib/materials-legacy";
 import {Resource, ResourceWithLink} from "./utils/resource";
 import ConcurrentDownloader from "./lib/concurrent-downloader";
+
+const schedule = require('node-schedule');
 
 fixPath();
 
@@ -43,7 +50,8 @@ function toggleWindow() {
     tray.setContextMenu(trayMenu)
 }
 
-function updateTray(courses: Course[]) {
+
+function updateTray(courses?: Course[]) {
     trayMenuTemplate = [
         {
             label: 'Open Folder',
@@ -66,59 +74,62 @@ function updateTray(courses: Course[]) {
             }
         }
     ]
-    if (courses.length === 0) {
-        trayMenuTemplate[0].submenu.push({
-            label: "No courses",
-            enabled: false
-        })
-        trayMenuTemplate[1].submenu.push({
-            label: "No courses",
-            enabled: false
-        })
-    } else {
-        courses.forEach(course => {
+    if(courses) {
+        if (courses.length === 0) {
             trayMenuTemplate[0].submenu.push({
-                label: course.title,
-                click: async function () {
-                    await open(path.join(folderPath, course.title))
-                }
+                label: "No courses",
+                enabled: false
             })
             trayMenuTemplate[1].submenu.push({
-                label: course.title,
-                click: async function () {
-                    showPendingNotification(course.title)
-                    try {
-                        let existingCredentials = await keystore.getCredentials()
+                label: "No courses",
+                enabled: false
+            })
+        } else {
+            courses.forEach(course => {
+                trayMenuTemplate[0].submenu.push({
+                    label: course.title,
+                    click: async function () {
+                        await open(path.join(folderPath, course.title))
+                    }
+                })
+                trayMenuTemplate[1].submenu.push({
+                    label: course.title,
+                    click: async function () {
+                        showPendingNotification(course.title)
+                        try {
+                            let existingCredentials = await keystore.getCredentials()
 
-                        if (existingCredentials) {
-                            const newToken = await testAuth(existingCredentials)
-                            if (!newToken) {
+                            if (existingCredentials) {
+                                const newToken = await testAuth(existingCredentials)
+                                if (!newToken) {
+                                    win.show()
+                                    win.webContents.send("page", "login")
+                                } else {
+                                    tokenAndCredentials = {credentials: existingCredentials, token: newToken}
+                                    const materialsLegacy = new MaterialsLegacy();
+                                    await materialsLegacy.authLegacy(tokenAndCredentials.credentials)
+                                    const numberOfDownloads = await downloadCourse(course, new MaterialsApi(tokenAndCredentials.token), materialsLegacy)
+                                    if (numberOfDownloads == -1) {
+                                        showErrorNotification()
+                                    } else {
+                                        showCompletedNotification(numberOfDownloads, course.title, path.join(folderPath, course.title))
+                                    }
+                                }
+                            } else {
                                 win.show()
                                 win.webContents.send("page", "login")
-                            } else {
-                                tokenAndCredentials = {credentials: existingCredentials, token: newToken}
-                                const materialsLegacy = new MaterialsLegacy();
-                                await materialsLegacy.authLegacy(tokenAndCredentials.credentials)
-                                const numberOfDownloads = await downloadCourse(course, new MaterialsApi(tokenAndCredentials.token), materialsLegacy)
-                                if (numberOfDownloads == -1) {
-                                    showErrorNotification()
-                                } else {
-                                    showCompletedNotification(numberOfDownloads, course.title, path.join(folderPath, course.title))
-                                }
                             }
-                        } else {
-                            win.show()
-                            win.webContents.send("page", "login")
+
+                        } catch (e) {
+                            showErrorNotification()
                         }
 
-                    } catch (e) {
-                        showErrorNotification()
                     }
-
-                }
+                })
             })
-        })
+        }
     }
+
     tray.setToolTip("Materials")
     const trayMenu = Menu.buildFromTemplate(trayMenuTemplate)
     tray.setContextMenu(trayMenu)
@@ -147,6 +158,32 @@ app.on("ready", async () => {
     let courses = conf.getCourses();
     updateTray(courses);
 
+});
+
+const job = schedule.scheduleJob('59 * * * *', async function () {
+    try {
+        let existingCredentials = await keystore.getCredentials()
+
+        if (existingCredentials) {
+            const newToken = await testAuth(existingCredentials)
+            if (newToken) {
+                tokenAndCredentials = {credentials: existingCredentials, token: newToken}
+                const courses = conf.getCourses();
+                const materialsLegacy = new MaterialsLegacy();
+                await materialsLegacy.authLegacy(tokenAndCredentials.credentials)
+                let sum = 0;
+                for (let i = 0; i < courses.length; i++) {
+                    sum += await downloadCourse(courses[i], new MaterialsApi(tokenAndCredentials.token), materialsLegacy)
+                }
+                if (sum > 0) {
+                    showAllNotification(folderPath)
+                }
+            }
+        }
+
+    } catch (e) {
+        console.log(e)
+    }
 });
 
 
@@ -206,6 +243,7 @@ ipcMain.on("clearConfig", async (event, data) => {
 
 ipcMain.on("closeWindow", async (event, data) => {
     win.hide()
+    updateTray()
 });
 
 export async function downloadCourse(course: Course, materialsAPI: MaterialsApi, materialsLegacy: MaterialsLegacy) {
