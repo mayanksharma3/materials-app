@@ -37,7 +37,6 @@ function createWindow() {
 const keystore = new Keystore();
 const conf = new ConfigStore(id);
 const folderPath = conf.getFolderPath() || path.join(require("os").homedir(), "Documents", "Materials")
-console.log(folderPath)
 let tokenAndCredentials;
 
 let tray = null
@@ -164,8 +163,8 @@ if (!gotTheLock) {
         }
 
         tray = new Tray(path.join(__dirname, '../', "media", process.platform === "win32" ? "icon.ico" : 'materials@2x.png'))
-        if(process.platform == "win32") {
-            tray.on('clicked', function() {
+        if (process.platform == "win32") {
+            tray.on('clicked', function () {
                 tray.popUpContextMenu();
             })
         }
@@ -186,12 +185,15 @@ const job = schedule.scheduleJob('59 * * * *', async function () {
                 const courses = conf.getCourses();
                 const materialsLegacy = new MaterialsLegacy();
                 await materialsLegacy.authLegacy(tokenAndCredentials.credentials)
-                let sum = 0;
+                let counts = {};
+                let sum = 0
                 for (let i = 0; i < courses.length; i++) {
-                    sum += await downloadCourse(courses[i], new MaterialsApi(tokenAndCredentials.token), materialsLegacy)
+                    let courseCount = await downloadCourse(courses[i], new MaterialsApi(tokenAndCredentials.token), materialsLegacy)
+                    counts[courses[i].title] = courseCount
+                    sum += courseCount
                 }
-                if (sum > 0) {
-                    showAllNotification(folderPath)
+                if(sum > 0) {
+                    showAllNotification(folderPath, counts)
                 }
             }
         }

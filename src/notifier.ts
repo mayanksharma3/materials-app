@@ -23,10 +23,14 @@ export function showCompletedNotification(numberOfDownloads, courseName, folderP
 }
 
 
-export function showAllNotification(folderPath) {
+export function showAllNotification(folderPath, updates: {[key:string]: number}) {
+    let body = "There are some new materials for: \n"
+    body += Object.keys(updates).filter(x => updates[x] > 0).join(", ")
+    body += "\nClick to open folder"
+
     const notification = new Notification({
         title: "New Materials",
-        body: "There are some new materials! Click to open folder",
+        body: body,
     })
     notification.on('click', async (event)=>{
         await open(folderPath)
