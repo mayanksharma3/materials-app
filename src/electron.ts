@@ -13,7 +13,6 @@ import {id} from "./utils/config";
 import MaterialsApi, {testAuth} from "./lib/materials-api";
 import Keystore from "./lib/keystore";
 import {Course} from "./utils/course";
-import MaterialsLegacy from "./lib/materials-legacy";
 import {Resource, ResourceWithLink} from "./utils/resource";
 import ConcurrentDownloader from "./lib/concurrent-downloader";
 
@@ -105,9 +104,7 @@ function updateTray(courses: Course[]) {
                                 win.webContents.send("page", "login")
                             } else {
                                 tokenAndCredentials = {credentials: existingCredentials, token: newToken}
-                                const materialsLegacy = new MaterialsLegacy();
-                                await materialsLegacy.authLegacy(tokenAndCredentials.credentials)
-                                const numberOfDownloads = await downloadCourse(course, new MaterialsApi(tokenAndCredentials.token), materialsLegacy)
+                                const numberOfDownloads = await downloadCourse(course, new MaterialsApi(tokenAndCredentials.token))
                                 if (numberOfDownloads == -1) {
                                     showErrorNotification()
                                 } else {
@@ -183,12 +180,10 @@ const job = schedule.scheduleJob('59 * * * *', async function () {
             if (newToken) {
                 tokenAndCredentials = {credentials: existingCredentials, token: newToken}
                 const courses = conf.getCourses();
-                const materialsLegacy = new MaterialsLegacy();
-                await materialsLegacy.authLegacy(tokenAndCredentials.credentials)
                 let counts = {};
                 let sum = 0
                 for (let i = 0; i < courses.length; i++) {
-                    let courseCount = await downloadCourse(courses[i], new MaterialsApi(tokenAndCredentials.token), materialsLegacy)
+                    let courseCount = await downloadCourse(courses[i], new MaterialsApi(tokenAndCredentials.token))
                     counts[courses[i].title] = courseCount
                     sum += courseCount
                 }
@@ -262,7 +257,7 @@ ipcMain.on("closeWindow", async (event, data) => {
     win.hide()
 });
 
-export async function downloadCourse(course: Course, materialsAPI: MaterialsApi, materialsLegacy: MaterialsLegacy) {
+export async function downloadCourse(course: Course, materialsAPI: MaterialsApi) {
     const resourcesResult = await materialsAPI.getCourseResources(course.code)
     // .map is a hack to ensure the extension is always added
     const nonLinkResources = resourcesResult.data.filter(x => x.type == 'file').map(x => {
@@ -270,7 +265,7 @@ export async function downloadCourse(course: Course, materialsAPI: MaterialsApi,
         return x
     }) as Resource[]
     const pdfLinkResources = resourcesResult.data.filter(x => x.type == 'link' && x.path.endsWith(".pdf")) as ResourceWithLink[]
-    const concurrentDownloader = new ConcurrentDownloader(materialsLegacy, course.title, folderPath)
+    const concurrentDownloader = new ConcurrentDownloader(materialsAPI, course.title, folderPath)
     await concurrentDownloader.scheduleDownloads(nonLinkResources)
     concurrentDownloader.scheduleLinkDownloads(pdfLinkResources)
     return await concurrentDownloader.executeDownloads()

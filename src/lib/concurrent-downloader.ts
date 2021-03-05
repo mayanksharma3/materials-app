@@ -1,18 +1,18 @@
-import MaterialsLegacy from "./materials-legacy";
 import {Resource, ResourceWithLink} from "../utils/resource";
 import path from "path";
 import fs from "fs";
 import {downloadURL} from "./link-downloader";
+import MaterialsApi from "./materials-api";
 
 class ConcurrentDownloader {
 
-    materialsLegacy: MaterialsLegacy;
+    materialsLegacy: MaterialsApi;
     course: string;
     folderPath: string;
     tasks: any[] = [];
 
 
-    constructor(materialsLegacy: MaterialsLegacy, course: string, folderPath: string) {
+    constructor(materialsLegacy: MaterialsApi, course: string, folderPath: string) {
         this.materialsLegacy = materialsLegacy;
         this.course = course;
         this.folderPath = folderPath;
